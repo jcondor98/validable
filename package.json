@@ -1,0 +1,29 @@
+{
+  "name": "validable",
+  "version": "0.0.1",
+  "description": "Library to make any class validable by extending or mixing it",
+  "main": "validable.js",
+  "files": [
+    "validable.js"
+  ],
+  "scripts": {
+    "test": "npx mocha test.js"
+  },
+  "keywords": [
+    "validate",
+    "validable",
+    "validation",
+    "class",
+    "mixin"
+  ],
+  "author": "jcondor",
+  "license": "MIT",
+  "repository": "github:jcondor98/validable",
+  "dependencies": {
+    "validate.js": "^0.13.1"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "mocha": "^7.2.0"
+  }
+}
