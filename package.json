@@ -1,6 +1,6 @@
 {
   "name": "validable",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Library to make any class validable by extending or mixing it",
   "main": "validable.js",
   "files": [
