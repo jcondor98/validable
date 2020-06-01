@@ -132,7 +132,7 @@ function requirelist(obj, rlist) {
 
   const errors = rlist
     .filter(f => !obj.hasOwnProperty(f))
-    .map(f => [f, `Missing ${f}`])
+    .map(f => [f, [`Missing ${f}`]])
 
   return errors.length ? Object.fromEntries(errors) : null
 }
