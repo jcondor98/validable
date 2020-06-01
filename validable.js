@@ -80,6 +80,83 @@ class ValidationError extends Error {
   }
 }
 
+
+/** Raise errors if other fields are present, excluding the whitelisted ones
+ * @param {object} obj - The object to validate against the whitelist
+ * @param {Iterable<String>} wlist - The iterable whitelist
+ * @returns {null|object|Error} null on no errors, otherwise an object
+ *   containing the validation errors or an instance of Error on bad parameters
+ */
+function whitelist(obj, wlist) {
+  if (!obj) return new Error('Passed falsy object')
+  if (!wlist || typeof wlist[Symbol.iterator] !== 'function')
+    return new Error('Passed non-iterable whitelist')
+  wlist = new Set(wlist)
+
+  const errors = {};
+  for (const f of Object.keys(obj))
+    if (!wlist.has(f)) errors[f] = [`${f} is not accepted`]
+  return Object.keys(errors).length ? errors : null
+}
+
+
+/** Raise errors if fields contained in the blacklist are present
+ * @param {object} obj - The object to validate against the blacklist
+ * @param {Iterable<String>} blist - The iterable blacklist
+ * @returns {null|object|Error} null on no errors, otherwise an object
+ *   containing the validation errors or an instance of Error on bad parameters
+ */
+function blacklist(obj, blist) {
+  if (!obj) return new Error('Passed falsy object')
+  if (!blist || typeof blist[Symbol.iterator] !== 'function')
+    return new Error('Passed non-iterable blacklist')
+  if (! (blist instanceof Set)) blist = new Set(blist)
+
+  const errors = {};
+  for (const f of Object.keys(obj))
+    if (blist.has(f)) errors[f] = [`${f} is not accepted`]
+  return Object.keys(errors).length ? errors : null
+}
+
+/** Raise errors if an object does not contain every specified field
+ * @param {object} obj - The object to validate against the requirelist
+ * @param {Iterable<String>} blist - The iterable requirelist
+ * @returns {null|object|Error} null on no errors, otherwise an object
+ *   containing the validation errors or an instance of Error on bad parameters
+ */
+function requirelist(obj, rlist) {
+  if (!obj) return new Error('Passed falsy object')
+  if (!rlist || typeof rlist[Symbol.iterator] !== 'function')
+    return new Error('Passed non-iterable requirelist')
+  if (!validate.isArray(rlist)) rlist = [...rlist]
+
+  const errors = rlist
+    .filter(f => !obj.hasOwnProperty(f))
+    .map(f => [f, `Missing ${f}`])
+
+  return errors.length ? Object.fromEntries(errors) : null
+}
+
+
+/** Merge multiple error objects
+ * @param {...object} The validation error objects to merge
+ * @throws Objects must be effectively representing validation errors
+ * @return {object|null} An object containing all the errors, or null on no or
+ *   invalid objects
+ */
+function merge(...objs) {
+  return (!objs.length) ? null : objs.reduce((acc, e) => {
+    if (e) for (const f in e) {
+      if (!validate.isArray(e[f]))
+        throw new Error('Member of error object is not an array')
+      if (acc[f]) for (const x of e[f]) acc[f].push(x)
+      else acc[f] = e[f]
+    }
+    return acc
+  }, {})
+}
+
+
 // Validate just one field
 validate.one = function (field, value, constraints) {
   if (!field || !(validate.isString(field) || typeof field === 'symbol')) {
@@ -110,5 +187,5 @@ module.exports = {
   Mixin: ValidableMixin,
   Class: ValidableMixin(),
   Error: ValidationError,
-  validate: validate,
+  validate, whitelist, blacklist, requirelist, merge
 }

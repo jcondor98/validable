@@ -19,8 +19,8 @@ class Mock extends Validable.Class {
   }
 }
 
-describe('A class extending Validable.Class', function () {
-  describe('validating an instance', function () {
+describe('A class extending Validable.Class', () => {
+  describe('validating an instance', () => {
     let mocky
     beforeEach(
       () =>
@@ -41,7 +41,7 @@ describe('A class extending Validable.Class', function () {
     })
   })
 
-  describe('when validating a field', function () {
+  describe('when validating a field', () => {
     it('should be successful with good field and value', () =>
       expect(Mock.validate('str', 'abc')).to.not.be.ok())
 
@@ -52,11 +52,11 @@ describe('A class extending Validable.Class', function () {
       shouldBeInternalError(Mock.validate(() => 'boh', 'mah')))
   })
 
-  describe('when validating an object', function () {
+  describe('when validating an object', () => {
     let obj
     beforeEach(() => (obj = { str: 'abc', num: 123, req1: 'def', req2: 'ghi' }))
 
-    describe('weakly', function () {
+    describe('weakly', () => {
       it('should be successful with good properties', () =>
         expect(Mock.validateObject(obj, true)).to.not.be.ok())
 
@@ -74,7 +74,7 @@ describe('A class extending Validable.Class', function () {
       })
     })
 
-    describe('strictly', function () {
+    describe('strictly', () => {
       it('should be successful with good properties', () =>
         expect(Mock.validateObject(obj)).to.not.be.ok())
 
@@ -95,6 +95,110 @@ describe('A class extending Validable.Class', function () {
       })
     })
   })
+})
+
+describe('whitelist', () => {
+  const wlist = new Set(['a', 'b', 'c'])
+
+  it('should be successful with no extra fields', () =>
+    expect(Validable.whitelist({ a: 1, c: 2 }, wlist)).to.be(null))
+
+  describe('it should return a validation error with', () => {
+    specify('extra fields', () =>
+      expect(Validable.whitelist({ a: 1, d: 2 }, wlist)).to.have.property('d'))
+
+    specify('empty whitelist and non-empty object', () =>
+      expect(Validable.whitelist({ a: 1 }, [])).to.have.property('a'))
+  })
+
+  describe('should return an instance of Error with', () => {
+    specify('falsy object to validate', () =>
+      expect(Validable.whitelist(null, wlist)).to.be.an(Error))
+
+    specify('falsy whitelist', () =>
+      expect(Validable.whitelist({ a: 1 }, null)).to.be.an(Error))
+
+    specify('non-iterable whitelist', () =>
+      expect(Validable.whitelist({ a: 1 }, { a: true })).to.be.an(Error))
+  })
+})
+
+describe('blacklist', () => {
+  const blist = new Set(['d', 'e', 'f'])
+
+  describe('should be successful with', () => {
+    specify('no blacklisted fields', () =>
+      expect(Validable.blacklist({ 'a': 1, 'b': 2 }, blist)).to.be(null))
+
+    specify('empty blacklist', () =>
+      expect(Validable.blacklist({ 'd': 1, 'f': 2 }, [])).to.be(null))
+  })
+
+  it('should return a validation error with blacklisted fields', () =>
+    expect(Validable.blacklist({ a: 1, e: null }, blist)).to.have.property('e'))
+
+  describe('should return an instance of Error with', () => {
+    specify('falsy object to validate', () =>
+      expect(Validable.blacklist(null, blist)).to.be.an(Error))
+
+    specify('falsy blacklist', () =>
+      expect(Validable.blacklist({ a: 1 }, null)).to.be.an(Error))
+
+    specify('non-iterable blacklist', () =>
+      expect(Validable.blacklist({ a: 1 }, { b: true })).to.be.an(Error))
+  })
+})
+
+describe('requirelist', () => {
+  const rlist = ['a', 'b']
+
+  describe('should be successful with', () => {
+    specify('all required fields', () =>
+      expect(Validable.requirelist({ a: 1, b: 2 }, rlist)).to.be(null))
+
+    specify('all required fields plus others', () =>
+      expect(Validable.requirelist({ a: 1, b: 2, c: 3}, rlist)).to.be(null))
+
+    specify('empty requirelist', () =>
+      expect(Validable.requirelist({ a: 1, b: 2 }, [])).to.be(null))
+  })
+
+  describe('should return an instance of Error with', () => {
+    specify('falsy object to validate', () =>
+      expect(Validable.requirelist(null, rlist)).to.be.an(Error))
+
+    specify('falsy requirelist', () =>
+      expect(Validable.requirelist({ a: 1 }, null)).to.be.an(Error))
+
+    specify('non-iterable requirelist', () =>
+      expect(Validable.requirelist({ a: 1 }, { b: true })).to.be.an(Error))
+  })
+})
+
+describe('merge', () => {
+  const err = { a: ['1'] }
+  it('should return null with no arguments', () =>
+    expect(Validable.merge()).to.be(null))
+
+  describe('should be successful with', () => {
+    specify('"overlapping" objects', () =>
+      expect(Validable.merge(err, { a: ['2'] }).a).to.have.length(2))
+
+    specify('"non-overlapping" objects', () => {
+      const res = Validable.merge({ a: ['a'] }, { b: ['b'] }, { c: ['c'] })
+      for (const x of ['a', 'b', 'c'])
+        expect(res[x]).to.eql([x])
+    })
+
+    specify('a single object', () =>
+      expect(Validable.merge(err)).to.eql(err))
+
+    specify('empty objects', () =>
+      expect(Validable.merge({}, {}, {}, {})).to.eql({}))
+  })
+
+  it('should throw an error with malformed objects', () =>
+    expect(() => Validable.merge(err, { a: 123 })).to.throwError())
 })
 
 function shouldBeInternalError(o) {
