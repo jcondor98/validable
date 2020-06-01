@@ -177,8 +177,17 @@ describe('requirelist', () => {
 
 describe('merge', () => {
   const err = { a: ['1'] }
-  it('should return null with no arguments', () =>
-    expect(Validable.merge()).to.be(null))
+
+  describe('should return null with', function() {
+    specify('no arguments', () =>
+      expect(Validable.merge()).to.be(null))
+
+    specify('empty objects', () =>
+      expect(Validable.merge({}, {}, {}, {})).to.be(null))
+
+    specify('empty and falsy objects', () =>
+      expect(Validable.merge({}, null, {}, undefined, false, {})).to.be(null))
+  })
 
   describe('should be successful with', () => {
     specify('"overlapping" objects', () =>
@@ -192,9 +201,6 @@ describe('merge', () => {
 
     specify('a single object', () =>
       expect(Validable.merge(err)).to.eql(err))
-
-    specify('empty objects', () =>
-      expect(Validable.merge({}, {}, {}, {})).to.eql({}))
   })
 
   it('should throw an error with malformed objects', () =>

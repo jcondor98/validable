@@ -145,7 +145,8 @@ function requirelist(obj, rlist) {
  *   invalid objects
  */
 function merge(...objs) {
-  return (!objs.length) ? null : objs.reduce((acc, e) => {
+  if (!objs.length) return null
+  const errors = objs.reduce((acc, e) => {
     if (e) for (const f in e) {
       if (!validate.isArray(e[f]))
         throw new Error('Member of error object is not an array')
@@ -154,6 +155,9 @@ function merge(...objs) {
     }
     return acc
   }, {})
+
+  for (const x in errors) return errors
+  return null
 }
 
 
